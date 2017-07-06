@@ -1,0 +1,21 @@
+version: '2'
+services:
+  app:
+    image: master
+    build:
+      context: ../
+      dockerfile: ./docker/Dockerfile
+    environment:
+      - LANG=en_US.utf8
+
+  tests:
+    extends: app
+    image: master-tests
+
+  postgres:
+    image: postgres:9.2-alpine
+    container_name: master-postgres
+    environment:
+      - POSTGRES_USER=master_dist_queue
+      - POSTGRES_PASSWORD=master_dist_queue
+      - POSTGRES_DB=master_dist_queue
