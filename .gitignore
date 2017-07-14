@@ -1,4 +1,4 @@
-ws_dist_queue.egg-info/*
+dq_worker.egg-info/*
 .idea/*
 .cache/*
 *pyc
