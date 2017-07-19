@@ -3,3 +3,4 @@ paramiko==2.2.1
 knot==0.4.0
 schematics==2.0.1
 twisted
+pyOpenSSL

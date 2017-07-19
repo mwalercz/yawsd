@@ -25,6 +25,11 @@ setup(
     description="dq_worker",
     license="BSD",
     packages=find_packages(include=path_in_project('dq_worker*'), exclude=['tests*']),
+    entry_points={
+        'console_scripts': [
+            'worker = dq_worker.app:main',
+        ],
+    },
     include_package_data=True,
     install_requires=read_requirements('requirements.txt'),
     tests_require=read_requirements('requirements_dev.txt'),

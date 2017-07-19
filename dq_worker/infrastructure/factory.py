@@ -2,7 +2,7 @@ from autobahn.twisted.websocket import WebSocketClientFactory
 from twisted.internet.protocol import ReconnectingClientFactory
 
 
-class WorkerFactory(WebSocketClientFactory, ReconnectingClientFactory):
+class DqWorkerFactory(WebSocketClientFactory, ReconnectingClientFactory):
     def __init__(self, url, headers):
         WebSocketClientFactory.__init__(self, url, headers=headers)
 

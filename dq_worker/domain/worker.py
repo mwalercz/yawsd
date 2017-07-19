@@ -1,13 +1,25 @@
 import paramiko
 
 
+class WorkerFactory:
+    def __init__(self, hostname):
+        self.hostname = hostname
+
+    def get(self, work):
+        return Worker(
+            hostname=self.hostname,
+            work=work,
+        )
+
+
 class Worker:
     INVOKE_BASH = r"bash -c"
     ECHO_PID = r"echo $$"
     GOTO_DIR = r"cd {}"
     EXEC_CMD = r"exec {}"
 
-    def __init__(self, work):
+    def __init__(self, hostname, work):
+        self.hostname = hostname
         self.work = work
         self.pid = None
 
@@ -49,7 +61,7 @@ class Worker:
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(
-            'localhost',
+            hostname=self.hostname,
             username=self.work.username,
             password=self.work.password
         )

@@ -1,9 +1,20 @@
+import argparse
 import logging
+import os
 
 from autobahn.websocket.util import parse_url
 from knot import Container
 
+from definitions import ROOT_DIR
 from dq_worker.dependencies import register
+
+
+def check_if_credentials_are_ok(c):
+    if not c('ssh').try_to_login(
+        username=c('username'),
+        password=c('password'),
+    ):
+        raise Exception('Wrong credentials!')
 
 
 def make_app(
@@ -18,6 +29,8 @@ def make_app(
         password=password
     ))
     register(c)
+
+    check_if_credentials_are_ok(c)
     return WorkerApp(
         url=c('conf').get('broker', 'url'),
         reactor=c('reactor'),
@@ -56,6 +69,19 @@ class WorkerApp:
         self.controller.clean_up()
 
 
-if __name__ == "__main__":
-    app = make_app()
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-c', dest='config_path', default='develop.ini')
+    parser.add_argument('-u', dest='username', default='test')
+    parser.add_argument('-p', dest='password', default='test')
+    args = parser.parse_args()
+    app = make_app(
+        config_path=os.path.join(ROOT_DIR, 'dq_worker/conf', args.config_path),
+        username=args.username,
+        password=args.password,
+    )
     app.run()
+
+
+if __name__ == "__main__":
+    main()

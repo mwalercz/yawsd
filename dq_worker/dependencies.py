@@ -3,11 +3,13 @@ from ConfigParser import ConfigParser
 from twisted.internet import ssl
 from twisted.internet.defer import DeferredLock
 
+from dq_worker.domain.worker import WorkerFactory
 from dq_worker.infrastructure.controller import WorkerController
-from dq_worker.infrastructure.factory import WorkerFactory
+from dq_worker.infrastructure.factory import DqWorkerFactory
 from dq_worker.infrastructure.master_client import MasterClient, LockedMasterClient
 from dq_worker.infrastructure.protocol import WorkerProtocol
 from dq_worker.infrastructure.router import Router
+from dq_worker.infrastructure.ssh import SSHService
 
 
 def lock(c):
@@ -50,7 +52,7 @@ def ssl_context(c):
 
 
 def factory(c):
-    factory = WorkerFactory(
+    factory = DqWorkerFactory(
         url=c('conf').get('broker', 'url'),
         headers=c('headers'),
     )
@@ -70,9 +72,23 @@ def reactor(c):
     return reactor
 
 
+def worker_factory(c):
+    return WorkerFactory(
+        hostname=c('conf').get('ssh', 'hostname')
+    )
+
+
 def worker_controller(c):
     return WorkerController(
         master_client=c('locked_master_client'),
+        worker_factory=c('worker_factory')
+    )
+
+
+def ssh(c):
+    return SSHService(
+        hostname=c('conf').get('ssh', 'hostname')
+
     )
 
 
@@ -82,9 +98,11 @@ def register(c):
     c.add_service(lock)
     c.add_service(master_client)
     c.add_service(locked_master_client)
+    c.add_service(worker_factory)
     c.add_service(worker_controller)
     c.add_service(router)
     c.add_service(headers)
     c.add_service(protocol)
     c.add_service(factory)
     c.add_service(ssl_context)
+    c.add_service(ssh)

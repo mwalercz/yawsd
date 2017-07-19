@@ -1,16 +1,16 @@
 from twisted.internet import defer
 from twisted.internet import threads
 
-from dq_worker.domain.worker import Worker
 from dq_worker.infrastructure.validator import validate
 from dq_worker.schema import Work
 
 
 class WorkerController:
     def __init__(
-            self, master_client,
+            self, master_client, worker_factory
     ):
         self.master_client = master_client
+        self.worker_factory = worker_factory
         self.worker = None
         self.deferred_task = None
         self.current_work = None
@@ -30,7 +30,7 @@ class WorkerController:
             pass
         else:
             self.current_work = message
-            self.worker = Worker(work=self.current_work)
+            self.worker = self.worker_factory.get(work=self.current_work)
             self.deferred_task = threads.deferToThread(self.worker.do_work)
             self.deferred_task.addCallback(self._work_completed)
 
