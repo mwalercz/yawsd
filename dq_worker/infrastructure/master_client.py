@@ -12,7 +12,6 @@ class MasterClient(object):
             'body': body,
         }
         serialized_message = serialize(message)
-        print serialized_message
         self.master.sendMessage(serialized_message)
 
 
