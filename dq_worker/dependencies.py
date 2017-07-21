@@ -1,4 +1,5 @@
-from ConfigParser import ConfigParser
+import os
+from ConfigParser import SafeConfigParser
 
 from twisted.internet import ssl
 from twisted.internet.defer import DeferredLock
@@ -61,7 +62,7 @@ def factory(c):
 
 
 def conf(c):
-    conf = ConfigParser()
+    conf = SafeConfigParser(os.environ)
     conf.read(c('config_path'))
     return conf
 
@@ -74,7 +75,7 @@ def reactor(c):
 
 def worker_factory(c):
     return WorkerFactory(
-        hostname=c('conf').get('ssh', 'hostname')
+        hostname=c('conf').get('ssh', 'host')
     )
 
 
@@ -87,7 +88,7 @@ def worker_controller(c):
 
 def ssh(c):
     return SSHService(
-        hostname=c('conf').get('ssh', 'hostname')
+        hostname=c('conf').get('ssh', 'host')
 
     )
 
