@@ -14,6 +14,7 @@ class WorkerProtocol(WebSocketClientProtocol):
     controller = NotImplemented
     router = NotImplemented
     master_client_lock = NotImplemented
+    system_stat_gatherer = NotImplemented
 
     def onConnect(self, response):
         log.info('Connected to master: %s', self.peer)
@@ -41,7 +42,7 @@ class WorkerProtocol(WebSocketClientProtocol):
             responder = self.router.find_responder(message.get('path'))
             responder(message)
         except RouteNotFound as exc:
-            log.exception('')
+            log.exception(exc)
         except Exception as exc:
             log.exception(exc)
 
@@ -50,3 +51,7 @@ class WorkerProtocol(WebSocketClientProtocol):
         self.master_client.master = None
         self.locked_master_client.master = None
         log.info('Reason: %s, status_code: %s', reason, code)
+
+    def onPing(self, payload):
+        stat = self.system_stat_gatherer.get_system_stat()
+        self.sendPong(deserialize(stat))
