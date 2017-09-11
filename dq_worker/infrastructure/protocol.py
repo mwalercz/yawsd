@@ -53,5 +53,10 @@ class WorkerProtocol(WebSocketClientProtocol):
         log.info('Reason: %s, status_code: %s', reason, code)
 
     def onPing(self, payload):
+        log.info('Received ping from master')
+        self.sendPong(payload)
         stat = self.system_stat_gatherer.get_system_stat()
-        self.sendPong(deserialize(stat))
+        self.master_client.send(
+            action_name='worker_system_stat',
+            body=stat
+        )

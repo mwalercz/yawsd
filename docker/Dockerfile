@@ -2,7 +2,7 @@ FROM python:2.7-alpine
 
 RUN apk update \
     && apk add gcc libffi-dev openssl-dev python-dev openssh \
-    musl-dev make bash
+    musl-dev make bash linux-headers
 
 # python
 RUN mkdir -p /usr/src/app
@@ -20,9 +20,11 @@ RUN ssh-keygen -f /etc/ssh/ssh_host_rsa_key -N '' -t rsa \
 && 	ssh-keygen -f /etc/ssh/ssh_host_dsa_key -N '' -t dsa \
 &&  mkdir -p /var/run/sshd
 
-# user
-RUN adduser -S test -s /bin/bash
-RUN echo 'test:test' | chpasswd
+# users
+RUN adduser -S test -s /bin/bash \
+&& echo 'test:test' | chpasswd \
+&& adduser -S admin -s /bin/bash \
+&& echo 'admin:admin' | chpasswd
 
 ENTRYPOINT ["entrypoint"]
 
