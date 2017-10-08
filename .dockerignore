@@ -1,0 +1,6 @@
+dq_worker.egg-info/*
+.git/*
+.eggs/*
+.idea/*
+.cache/*
+*pyc

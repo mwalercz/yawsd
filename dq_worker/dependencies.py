@@ -11,7 +11,6 @@ from dq_worker.infrastructure.master_client import MasterClient, LockedMasterCli
 from dq_worker.infrastructure.protocol import WorkerProtocol
 from dq_worker.infrastructure.router import Router
 from dq_worker.infrastructure.ssh import SSHService
-from dq_worker.infrastructure.system_stat import SystemStatGatherer
 
 
 def lock(c):
@@ -32,10 +31,6 @@ def router(c):
     return Router(c('worker_controller'))
 
 
-def system_stat_gatherer(c):
-    return SystemStatGatherer()
-
-
 def protocol(c):
     protocol = WorkerProtocol
     protocol.master_client = c('master_client')
@@ -43,7 +38,6 @@ def protocol(c):
     protocol.router = c('router')
     protocol.controller = c('worker_controller')
     protocol.master_client_lock = c('lock')
-    protocol.system_stat_gatherer = c('system_stat_gatherer')
     return protocol
 
 
@@ -105,7 +99,6 @@ def register(c):
     c.add_service(lock)
     c.add_service(master_client)
     c.add_service(locked_master_client)
-    c.add_service(system_stat_gatherer)
     c.add_service(worker_factory)
     c.add_service(worker_controller)
     c.add_service(router)

@@ -4,6 +4,7 @@ from autobahn.twisted.websocket import WebSocketClientProtocol
 
 from dq_worker.exceptions import RouteNotFound
 from dq_worker.infrastructure.serializers import deserialize
+from dq_worker.infrastructure.system_stat import get_system_info, get_system_stat
 
 log = logging.getLogger(__name__)
 
@@ -14,7 +15,6 @@ class WorkerProtocol(WebSocketClientProtocol):
     controller = NotImplemented
     router = NotImplemented
     master_client_lock = NotImplemented
-    system_stat_gatherer = NotImplemented
 
     def onConnect(self, response):
         log.info('Connected to master: %s', self.peer)
@@ -24,6 +24,7 @@ class WorkerProtocol(WebSocketClientProtocol):
         self.master_client.master = self
         self.master_client.send(
             action_name='worker_connected',
+            body=get_system_info()
         )
         if self.controller.current_work:
             self.master_client.send(
@@ -55,8 +56,7 @@ class WorkerProtocol(WebSocketClientProtocol):
     def onPing(self, payload):
         log.info('Received ping from master')
         self.sendPong(payload)
-        stat = self.system_stat_gatherer.get_system_stat()
         self.master_client.send(
             action_name='worker_system_stat',
-            body=stat
+            body=get_system_stat()
         )
