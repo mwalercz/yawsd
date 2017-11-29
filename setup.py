@@ -27,7 +27,7 @@ setup(
     packages=find_packages(include=path_in_project('dq_worker*'), exclude=['tests*']),
     entry_points={
         'console_scripts': [
-            'worker = dq_worker.app:main',
+            'dq-worker = dq_worker.app:main',
         ],
     },
     include_package_data=True,
