@@ -24,6 +24,7 @@ RUN chmod 755 /usr/bin/entrypoint \
 && echo 'admin:admin' | chpasswd
 
 COPY . .
+COPY ./test-apps /home/test/test-apps
 
 ENTRYPOINT ["entrypoint"]
 

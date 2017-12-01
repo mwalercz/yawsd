@@ -8,4 +8,4 @@ VERSION=`git rev-parse --short HEAD`
 echo "version: $VERSION"
 
 docker build -t ${PROJECT}/${IMAGE}:latest -f ../docker/Dockerfile ..
-docker tag ${PROJECT}/${IMAGE}:latest ${PROJECT./}/${IMAGE}:${VERSION}
+docker tag ${PROJECT}/${IMAGE}:latest ${PROJECT}/${IMAGE}:${VERSION}
