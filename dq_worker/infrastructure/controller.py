@@ -34,11 +34,19 @@ class WorkerController:
             self.deferred_task = threads.deferToThread(self.worker.do_work)
             self.deferred_task.addCallback(self._work_completed)
 
-    def kill_work(self, message):
+    def cancel_work(self, message):
         if self.deferred_task:
             d = threads.deferToThread(self.worker.kill_work)
             d.addCallback(self._work_was_killed)
             self.deferred_task.callbacks = []
+
+    @defer.inlineCallbacks
+    def work_is_done_ack(self, message):
+        self.deferred_task = None
+        self.current_work = None
+        yield self.master_client.send(
+            action_name='worker_requests_work'
+        )
 
     @defer.inlineCallbacks
     def _work_was_killed(self, result):
@@ -49,11 +57,6 @@ class WorkerController:
                     'work_id': self.current_work.work_id,
                     'status': 'killed',
                 }
-            )
-            self.deferred_task = None
-            self.current_work = None
-            yield self.master_client.send(
-                action_name='worker_requests_work'
             )
         else:
             yield self.master_client.send(
@@ -77,11 +80,6 @@ class WorkerController:
                 'status': status,
                 'output': result['output']
             }
-        )
-        self.deferred_task = None
-        self.current_work = None
-        yield self.master_client.send(
-            action_name='worker_requests_work'
         )
 
     def clean_up(self):
