@@ -1,3 +1,5 @@
+import base64
+
 import os
 from ConfigParser import SafeConfigParser
 
@@ -43,8 +45,12 @@ def protocol(c):
 
 def headers(c):
     return {
-        'username': c('username'),
-        'password': c('password'),
+        'Authorization': ' '.join([
+            'Basic',
+            base64.b64encode(
+                ':'.join([c('username'), c('password')])
+            ).decode()
+        ])
     }
 
 
