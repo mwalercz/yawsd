@@ -1,8 +1,8 @@
 from twisted.internet import defer
 from twisted.internet import threads
 
-from dq_worker.infrastructure.validator import validate
-from dq_worker.schema import Work
+from yawsd.infrastructure.validator import validate
+from yawsd.schema import Work
 
 
 class WorkerController:
@@ -42,11 +42,12 @@ class WorkerController:
 
     @defer.inlineCallbacks
     def work_is_done_ack(self, message):
-        self.deferred_task = None
-        self.current_work = None
-        yield self.master_client.send(
-            action_name='worker_requests_work'
-        )
+        if self.deferred_task:
+            self.deferred_task = None
+            self.current_work = None
+            yield self.master_client.send(
+                action_name='worker_requests_work'
+            )
 
     @defer.inlineCallbacks
     def _work_was_killed(self, result):

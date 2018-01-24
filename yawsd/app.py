@@ -6,7 +6,7 @@ from autobahn.websocket.util import parse_url
 from knot import Container
 
 from definitions import ROOT_DIR
-from dq_worker.dependencies import register
+from yawsd.dependencies import register
 
 
 def check_if_credentials_are_ok(c):
@@ -76,7 +76,7 @@ def main():
     parser.add_argument('-p', dest='password', default='test')
     args = parser.parse_args()
     app = make_app(
-        config_path=os.path.join(ROOT_DIR, 'dq_worker/conf', args.config_path),
+        config_path=os.path.join(ROOT_DIR, 'yawsd/conf', args.config_path),
         username=args.username,
         password=args.password,
     )

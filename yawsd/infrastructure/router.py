@@ -1,4 +1,4 @@
-from dq_worker.exceptions import RouteNotFound
+from yawsd.exceptions import RouteNotFound
 
 
 class Router:

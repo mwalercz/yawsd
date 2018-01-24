@@ -1,4 +1,4 @@
-dq_worker.egg-info/*
+yawsd.egg-info/*
 .idea/*
 .cache/*
 *pyc

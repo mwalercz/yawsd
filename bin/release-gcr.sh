@@ -2,7 +2,7 @@
 
 set -ex
 
-IMAGE=dq-worker
+IMAGE=yawsd
 VERSION=`git rev-parse --short HEAD`
 echo "version: $VERSION"
 

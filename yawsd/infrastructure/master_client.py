@@ -1,6 +1,6 @@
 from twisted.internet import defer
 
-from dq_worker.infrastructure.serializers import serialize
+from yawsd.infrastructure.serializers import serialize
 
 
 class MasterClient(object):
@@ -13,13 +13,3 @@ class MasterClient(object):
         }
         serialized_message = serialize(message)
         self.master.sendMessage(serialized_message)
-
-
-class LockedMasterClient(MasterClient):
-    lock = NotImplemented
-
-    @defer.inlineCallbacks
-    def send(self, action_name, body=None):
-        yield self.lock.acquire()
-        super(LockedMasterClient, self).send(action_name, body)
-        self.lock.release()

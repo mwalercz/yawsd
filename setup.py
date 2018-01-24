@@ -18,16 +18,16 @@ def read_requirements(filename):
     return contents.split('\n') if contents else []
 
 setup(
-    name="dq_worker",
+    name="yawsd",
     version="0.0.1",
     author="Maciej Walerczuk",
     author_email="mwalerczuk@gmail.com",
-    description="dq_worker",
+    description="yawsd",
     license="BSD",
-    packages=find_packages(include=path_in_project('dq_worker*'), exclude=['tests*']),
+    packages=find_packages(include=path_in_project('yawsd*'), exclude=['tests*']),
     entry_points={
         'console_scripts': [
-            'dq-worker = dq_worker.app:main',
+            'yawsd = yawsd.app:main',
         ],
     },
     include_package_data=True,

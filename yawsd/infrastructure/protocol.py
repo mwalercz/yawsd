@@ -1,20 +1,22 @@
 import logging
 
 from autobahn.twisted.websocket import WebSocketClientProtocol
+from twisted.internet import task
 
-from dq_worker.exceptions import RouteNotFound
-from dq_worker.infrastructure.serializers import deserialize
-from dq_worker.infrastructure.system_stat import get_system_info, get_system_stat
+from yawsd.exceptions import RouteNotFound
+from yawsd.infrastructure.serializers import deserialize
+from yawsd.infrastructure.system_stat import get_system_info, get_system_stat
 
 log = logging.getLogger(__name__)
 
 
 class WorkerProtocol(WebSocketClientProtocol):
     master_client = NotImplemented
-    locked_master_client = NotImplemented
     controller = NotImplemented
     router = NotImplemented
     master_client_lock = NotImplemented
+    sending_stats_task = None
+    stats_sending_interval = 10  # in seconds
 
     def onConnect(self, response):
         log.info('Connected to master: %s', self.peer)
@@ -32,9 +34,10 @@ class WorkerProtocol(WebSocketClientProtocol):
                 body=self.controller.current_work.to_primitive()
             )
 
-        self.locked_master_client.master = self
-        if self.master_client_lock.locked:
-            self.master_client_lock.release()
+        if self.sending_stats_task and self.sending_stats_task.running:
+            self.sending_stats_task.stop()
+        self.sending_stats_task = task.LoopingCall(self.send_stats_to_master)
+        self.sending_stats_task.start(self.stats_sending_interval)
 
     def onMessage(self, payload, isBinary):
         message = deserialize(payload)
@@ -48,14 +51,16 @@ class WorkerProtocol(WebSocketClientProtocol):
             log.exception(exc)
 
     def onClose(self, wasClean, code, reason):
-        self.master_client_lock.acquire()
+        if self.sending_stats_task and self.sending_stats_task.running:
+            self.sending_stats_task.stop()
         self.master_client.master = None
-        self.locked_master_client.master = None
         log.info('Reason: %s, status_code: %s', reason, code)
 
     def onPing(self, payload):
         log.info('Received ping from master')
         self.sendPong(payload)
+
+    def send_stats_to_master(self):
         self.master_client.send(
             action_name='worker_system_stat',
             body=get_system_stat()
