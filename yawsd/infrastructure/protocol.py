@@ -4,6 +4,7 @@ from autobahn.twisted.websocket import WebSocketClientProtocol
 from twisted.internet import task
 
 from yawsd.exceptions import RouteNotFound
+from yawsd.infrastructure.controller import Status
 from yawsd.infrastructure.serializers import deserialize
 from yawsd.infrastructure.system_stat import get_system_info, get_system_stat
 
@@ -28,11 +29,16 @@ class WorkerProtocol(WebSocketClientProtocol):
             action_name='worker_connected',
             body=get_system_info()
         )
-        if self.controller.current_work:
+        if (
+            self.controller.status == Status.BUSY or
+            self.controller.status == Status.WAITING_FOR_ACK
+        ):
             self.master_client.send(
                 action_name='worker_has_work',
                 body=self.controller.current_work.to_primitive()
             )
+        if self.controller.status == Status.WAITING_FOR_ACK:
+            self.master_client.send(**self.controller.work_is_done_msg)
 
         if self.sending_stats_task and self.sending_stats_task.running:
             self.sending_stats_task.stop()
@@ -54,7 +60,7 @@ class WorkerProtocol(WebSocketClientProtocol):
         if self.sending_stats_task and self.sending_stats_task.running:
             self.sending_stats_task.stop()
         self.master_client.master = None
-        log.info('Reason: %s, status_code: %s', reason, code)
+        log.info('Disconnected from master, reason: %s, status_code: %s', reason, code)
 
     def onPing(self, payload):
         log.info('Received ping from master')
