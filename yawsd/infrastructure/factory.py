@@ -1,5 +1,9 @@
+import logging
+
 from autobahn.twisted.websocket import WebSocketClientFactory
 from twisted.internet.protocol import ReconnectingClientFactory
+
+log = logging.getLogger(__name__)
 
 
 class DqWorkerFactory(WebSocketClientFactory, ReconnectingClientFactory):
@@ -7,9 +11,9 @@ class DqWorkerFactory(WebSocketClientFactory, ReconnectingClientFactory):
         WebSocketClientFactory.__init__(self, url, headers=headers)
 
     def clientConnectionFailed(self, connector, reason):
-        print("Client connection failed .. retrying ..")
+        log.info("Client connection failed .. retrying ..")
         self.retry(connector)
 
     def clientConnectionLost(self, connector, reason):
-        print("Client connection lost .. retrying ..")
+        log.info("Client connection lost .. retrying ..")
         self.retry(connector)

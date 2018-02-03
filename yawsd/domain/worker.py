@@ -24,17 +24,25 @@ class Worker:
         self.pid = None
 
     def do_work(self):
-        command = self._get_command()
-        ssh = self._connect_as_user()
-        chan = self._prepare_channel(ssh)
-        return self._exec_command(chan, command)
+        try:
+            command = self._get_command()
+            client = self._get_client()
+            chan = self._prepare_channel(client)
+            return self._exec_command(chan, command)
+        finally:
+            if client:
+                client.close()
 
     def kill_work(self):
         if self.pid:
-            command = self._get_kill_command()
-            ssh = self._connect_as_user()
-            chan = self._prepare_channel(ssh)
-            return self._exec_kill_command(chan, command)
+            try:
+                command = self._get_kill_command()
+                client = self._get_client()
+                chan = self._prepare_channel(client)
+                return self._exec_kill_command(chan, command)
+            finally:
+                if client:
+                    client.close()
         else:
             return None
 
@@ -57,25 +65,23 @@ class Worker:
     def _get_kill_command(self):
         return r"kill -9 {pid}".format(pid=self.pid).strip()
 
-    def _connect_as_user(self):
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(
+    def _get_client(self):
+        client = paramiko.SSHClient()
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        client.connect(
             hostname=self.hostname,
             username=self.work.username,
             password=self.work.password
         )
-        return ssh
+        return client
 
     def _exec_command(self, chan, command):
         f = chan.makefile()
         chan.exec_command(command)
         self.pid = f.readline()
-        output = f.read().decode("utf-8")
-        status = chan.recv_exit_status()
         return {
-            'output': output,
-            'status': status,
+            'output': f.read().decode("utf-8"),
+            'exit_code': chan.recv_exit_status(),
         }
 
     def _exec_kill_command(self, chan, command):

@@ -1,9 +1,14 @@
+import logging
+
 from enum import Enum
 from twisted.internet import defer
 from twisted.internet import threads
 
 from yawsd.infrastructure.validator import validate
 from yawsd.schema import Work
+
+
+log = logging.getLogger(__name__)
 
 
 class Status(Enum):
@@ -38,12 +43,12 @@ class WorkerController:
             self.current_work = message
             self.worker = self.worker_factory.get(work=self.current_work)
             self.deferred_task = threads.deferToThread(self.worker.do_work)
-            self.deferred_task.addCallback(self._work_completed)
+            self.deferred_task.addCallback(self.work_completed)
 
     def cancel_work(self, message):
         if self.status == Status.BUSY:
             d = threads.deferToThread(self.worker.kill_work)
-            d.addCallback(self._work_was_killed)
+            d.addCallback(self.work_killed)
             self.deferred_task.callbacks = []
 
     @defer.inlineCallbacks
@@ -58,40 +63,30 @@ class WorkerController:
             )
 
     @defer.inlineCallbacks
-    def _work_was_killed(self, result):
+    def work_killed(self, result):
         self.status = Status.WAITING_FOR_ACK
         if result == 0:
             self.work_is_done_msg = dict(
                 action_name='work_is_done',
                 body={
                     'work_id': self.current_work.work_id,
-                    'status': 'killed',
+                    'status': 'CANCELLED',
                 }
             )
         else:
-            self.work_is_done_msg = dict(
-                action_name='work_is_done',
-                body={
-                    'work_id': self.current_work.work_id,
-                    'status': 'work_not_killed',
-                }
-            )
+            log.error('Unable to kill work, work_id %s', self.current_work.work_id)
         self.master_client.send(**self.work_is_done_msg)
 
     @defer.inlineCallbacks
-    def _work_completed(self, result):
+    def work_completed(self, result):
         self.status = Status.WAITING_FOR_ACK
-        if result['status'] == 0:
-            status = 'finished_with_success'
-        else:
-            status = 'finished_with_failure'
-
         self.work_is_done_msg = dict(
             action_name='work_is_done',
             body={
                 'work_id': self.current_work.work_id,
-                'status': status,
-                'output': result['output']
+                'status': 'FINISHED',
+                'output': result['output'],
+                'exit_code': result['exit_code']
             }
         )
         yield self.master_client.send(**self.work_is_done_msg)

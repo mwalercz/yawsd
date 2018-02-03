@@ -7,6 +7,7 @@ from yawsd.exceptions import RouteNotFound
 from yawsd.infrastructure.controller import Status
 from yawsd.infrastructure.serializers import deserialize
 from yawsd.infrastructure.system_stat import get_system_info, get_system_stat
+from yawsd.infrastructure.utils import clear_passwords_from_message
 
 log = logging.getLogger(__name__)
 
@@ -17,7 +18,7 @@ class WorkerProtocol(WebSocketClientProtocol):
     router = NotImplemented
     master_client_lock = NotImplemented
     sending_stats_task = None
-    stats_sending_interval = 10  # in seconds
+    stats_sending_interval = 30  # in seconds
 
     def onConnect(self, response):
         log.info('Connected to master: %s', self.peer)
@@ -47,7 +48,7 @@ class WorkerProtocol(WebSocketClientProtocol):
 
     def onMessage(self, payload, isBinary):
         message = deserialize(payload)
-        log.info(message)
+        log.info('Received message from master: %s', repr(clear_passwords_from_message(message)))
         try:
             responder = self.router.find_responder(message.get('path'))
             responder(message)
@@ -63,7 +64,7 @@ class WorkerProtocol(WebSocketClientProtocol):
         log.info('Disconnected from master, reason: %s, status_code: %s', reason, code)
 
     def onPing(self, payload):
-        log.info('Received ping from master')
+        log.debug('Received ping from master')
         self.sendPong(payload)
 
     def send_stats_to_master(self):

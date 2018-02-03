@@ -1,8 +1,8 @@
 import logging
 
-from twisted.internet import defer
 
 from yawsd.infrastructure.serializers import serialize
+from yawsd.infrastructure.utils import clear_passwords_from_message
 
 log = logging.getLogger(__name__)
 
@@ -15,6 +15,6 @@ class MasterClient(object):
             'path': action_name,
             'body': body,
         }
+        log.info('Sending message to master: %s', repr(clear_passwords_from_message(message)))
         serialized_message = serialize(message)
-        log.info('Sending message to master: %s', serialized_message)
         self.master.sendMessage(serialized_message)
