@@ -18,7 +18,7 @@ def check_if_credentials_are_ok(c):
 
 
 def make_app(
-        config_path='conf/develop.ini',
+        config_path='conf/develop.cfg',
         username='test',
         password='test'
 ):
@@ -71,7 +71,7 @@ class WorkerApp:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', dest='config_path', default='develop.ini')
+    parser.add_argument('-c', dest='config_path', default='develop.cfg')
     parser.add_argument('-u', dest='username', default='test')
     parser.add_argument('-p', dest='password', default='test')
     args = parser.parse_args()

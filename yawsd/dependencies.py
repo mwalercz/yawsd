@@ -3,10 +3,8 @@ import base64
 import os
 from ConfigParser import SafeConfigParser
 
-from OpenSSL import SSL
 from twisted.internet import ssl
 
-from definitions import ROOT_DIR
 from yawsd.domain.worker import WorkerFactory
 from yawsd.infrastructure.controller import WorkerController
 from yawsd.infrastructure.factory import DqWorkerFactory

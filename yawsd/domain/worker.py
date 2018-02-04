@@ -1,4 +1,8 @@
+import logging
+
 import paramiko
+
+log = logging.getLogger(__name__)
 
 
 class WorkerFactory:
@@ -13,11 +17,6 @@ class WorkerFactory:
 
 
 class Worker:
-    INVOKE_BASH = r"bash -c"
-    ECHO_PID = r"echo $$"
-    GOTO_DIR = r"cd {}"
-    EXEC_CMD = r"exec {}"
-
     def __init__(self, hostname, work):
         self.hostname = hostname
         self.work = work
@@ -25,10 +24,22 @@ class Worker:
 
     def do_work(self):
         try:
-            command = self._get_command()
             client = self._get_client()
-            chan = self._prepare_channel(client)
-            return self._exec_command(chan, command)
+            tran = client.get_transport()
+            chan = tran.open_session()
+            chan.get_pty()
+            file = chan.makefile()
+            command = r"echo $$ && cd {} && exec {}".format(
+                self.work.cwd,
+                self.work.command,
+            ).strip()
+            log.info(command)
+            chan.exec_command(command)
+            self.pid = int(file.readline())
+            return {
+                'output': file.read().decode('utf-8'),
+                'exit_code': chan.recv_exit_status(),
+            }
         finally:
             if client:
                 client.close()
@@ -36,34 +47,20 @@ class Worker:
     def kill_work(self):
         if self.pid:
             try:
-                command = self._get_kill_command()
                 client = self._get_client()
-                chan = self._prepare_channel(client)
-                return self._exec_kill_command(chan, command)
+                tran = client.get_transport()
+                chan = tran.open_session()
+                file = chan.makefile()
+                chan.exec_command(r'kill -9 {pid}'.format(pid=str(self.pid)).strip())
+                return {
+                    'output': file.read().decode('utf-8'),
+                    'exit_code': chan.recv_exit_status(),
+                }
             finally:
                 if client:
                     client.close()
         else:
             return None
-
-    def _prepare_channel(self, ssh):
-        tran = ssh.get_transport()
-        chan = tran.open_session()
-        chan.get_pty()
-        return chan
-
-    def _get_command(self):
-        cmd_to_exec = self.EXEC_CMD.format(self.work.command)
-        goto_dir = self.GOTO_DIR.format(self.work.cwd)
-        return r"{invoke_bash} '{echo_pid}; {goto_dir}; {exec_cmd};'".format(
-            invoke_bash=self.INVOKE_BASH,
-            echo_pid=self.ECHO_PID,
-            goto_dir=goto_dir,
-            exec_cmd=cmd_to_exec,
-        ).strip()
-
-    def _get_kill_command(self):
-        return r"kill -9 {pid}".format(pid=self.pid).strip()
 
     def _get_client(self):
         client = paramiko.SSHClient()
@@ -74,17 +71,3 @@ class Worker:
             password=self.work.password
         )
         return client
-
-    def _exec_command(self, chan, command):
-        f = chan.makefile()
-        chan.exec_command(command)
-        self.pid = f.readline()
-        return {
-            'output': f.read().decode("utf-8"),
-            'exit_code': chan.recv_exit_status(),
-        }
-
-    def _exec_kill_command(self, chan, command):
-        chan.exec_command(command)
-        status = chan.recv_exit_status()
-        return status

@@ -65,17 +65,21 @@ class WorkerController:
     @defer.inlineCallbacks
     def work_killed(self, result):
         self.status = Status.WAITING_FOR_ACK
-        if result == 0:
+        if result and result['exit_code'] == 0:
             self.work_is_done_msg = dict(
                 action_name='work_is_done',
                 body={
                     'work_id': self.current_work.work_id,
-                    'status': 'CANCELLED',
+                    'status': 'KILLED',
                 }
             )
+            self.master_client.send(**self.work_is_done_msg)
         else:
-            log.error('Unable to kill work, work_id %s', self.current_work.work_id)
-        self.master_client.send(**self.work_is_done_msg)
+            log.error(
+                'Unable to kill work, work_id: %s, reason: %s',
+                self.current_work.work_id,
+                repr(result)
+            )
 
     @defer.inlineCallbacks
     def work_completed(self, result):
@@ -84,7 +88,7 @@ class WorkerController:
             action_name='work_is_done',
             body={
                 'work_id': self.current_work.work_id,
-                'status': 'FINISHED',
+                'status': 'DONE',
                 'output': result['output'],
                 'exit_code': result['exit_code']
             }
